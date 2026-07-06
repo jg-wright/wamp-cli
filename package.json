@@ -18,7 +18,7 @@
     "autobahn": "^26.0.0",
     "cli-table": "^0.3.11",
     "colors": "^1.4.0",
-    "commander": "^14.0.2",
+    "commander": "^15.0.0",
     "tslib": "^2.8.1",
     "yaml": "^2.8.1"
   },
