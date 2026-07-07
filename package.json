@@ -8,6 +8,11 @@
   },
   "author": "John Wright <johngeorge.wright@gmail.com>",
   "license": "MIT",
+  "homepage": "https://github.com/jg-wright/wamp-cli#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jg-wright/wamp-cli.git"
+  },
   "scripts": {
     "build": "tsc",
     "clean": "rimraf src/*.{js,d.ts}",
