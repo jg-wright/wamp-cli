@@ -6,11 +6,19 @@ on:
 
 jobs:
   publish-npm:
+    environment: npm
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/create-github-app-token@v3
+        id: auth
+        with:
+          client-id: ${{ secrets.APP_CLIENT_ID }}
+          private-key: ${{ secrets.APP_PEM }}
+          permission-contents: write
+          permission-pull-requests: write
       - uses: actions/checkout@v7
         with:
-          token: ${{ secrets.PUSH_TOKEN }}
+          persist-credentials: false
       - uses: actions/setup-node@v6
         with:
           node-version-file: .nvmrc
@@ -18,5 +26,4 @@ jobs:
       - run: npm run build
       - uses: cycjimmy/semantic-release-action@v5
         env:
-          GITHUB_TOKEN: ${{ secrets.PUSH_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.auth.outputs.token }}
