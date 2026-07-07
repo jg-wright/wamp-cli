@@ -8,6 +8,11 @@ jobs:
   publish-npm:
     environment: npm
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      id-token: write
     steps:
       - uses: actions/create-github-app-token@v3
         id: auth
