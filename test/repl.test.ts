@@ -4,7 +4,7 @@ import { spawn } from 'node:child_process'
 import { once } from 'node:events'
 import { fileURLToPath } from 'node:url'
 
-const DEFAULT_ROUTER_URL = 'ws://0.0.0.0:8080/'
+const DEFAULT_ROUTER_URL = 'ws://localhost:8080/'
 const DEFAULT_REALM = 'test1'
 
 test('REPL connects to the live router', { timeout: 30_000 }, async () => {
