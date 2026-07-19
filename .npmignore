@@ -8,4 +8,5 @@ commitlint.config.cjs
 docker-compose.yml
 prettier.config.cjs
 renovate.json
+test
 tsconfig.json
