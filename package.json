@@ -15,8 +15,10 @@
   },
   "scripts": {
     "build": "tsc",
+    "check": "tsc --noEmit",
     "clean": "rimraf src/*.{js,d.ts}",
     "start": "vite-node src/program.ts",
+    "test": "node --test test/**/*.test.ts",
     "prepare": "husky"
   },
   "dependencies": {

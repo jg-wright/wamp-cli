@@ -2,7 +2,7 @@
 
 import { Connection } from 'autobahn'
 import { program } from 'commander'
-import * as repl from './repl.js'
+import * as repl from './repl.ts'
 import 'colors'
 import { createRequire } from 'node:module'
 
