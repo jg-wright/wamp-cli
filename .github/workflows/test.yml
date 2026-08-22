@@ -1,0 +1,29 @@
+name: Test Pull Request
+
+on:
+  workflow_call:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    services:
+      nexusd:
+        image: ghcr.io/gammazero/nexusd:latest
+        ports:
+          - 8080:8080
+        command: -realm test1 -ws 0.0.0.0:8080
+
+    strategy:
+      matrix:
+        node-version: [24, 26]
+
+    container: node:${{ matrix.node-version }}-bookworm-slim
+
+    steps:
+      - uses: actions/checkout@v7
+      - run: npm ci
+      - run: npm run check
+      - run: npm test
+        env:
+          WAMP_ROUTER_URL: ws://nexusd:8080
