@@ -91,13 +91,13 @@ test(
     replSession.send('{ok: true, from: e2e}')
     await waitForOutput(
       replSession.readOutput,
-      new RegExp(`PUB>\\s+${escapeRegExp(topic)}>`),
+      new RegExp(`Published to\\s+${escapeRegExp(topic)}`),
       10_000,
     )
 
     assert.match(
       replSession.readOutput(),
-      new RegExp(`PUB>\\s+${escapeRegExp(topic)}>`),
+      new RegExp(`Published to\\s+${escapeRegExp(topic)}`),
     )
   },
 )
