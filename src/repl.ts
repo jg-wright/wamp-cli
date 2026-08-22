@@ -30,149 +30,80 @@ export const start = (connection: Connection) => (session: Session) => {
 
   replServer.defineCommand('SUB', {
     help: 'Subscript to a topic.',
-    async action(topic) {
-      if (!topic) {
-        console.error('Usage: .SUB <topic>'.red)
-        this.displayPrompt()
-        return
-      }
-
-      try {
-        await session.subscribe(topic.trim(), (args, kwargs) => {
-          process.stdout.write('\r')
-          console.info(
-            'PUB>'.cyan,
-            `${topic}>`.yellow,
-            inspect({ args, kwargs }, false, 10),
-          )
-          this.displayPrompt()
-        })
-        console.info('Subscribed to', topic.green)
-      } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`
-            .red,
+    action: command('Usage: .SUB <topic>', async function (topic) {
+      await session.subscribe(topic, (args, kwargs) => {
+        process.stdout.write('\r')
+        console.info(
+          'PUB>'.cyan,
+          `${topic}>`.yellow,
+          inspect({ args, kwargs }, false, 10),
         )
-      }
-
-      this.displayPrompt()
-    },
+        this.displayPrompt()
+      })
+      console.info('Subscribed to', topic.green)
+    }),
   })
 
   replServer.defineCommand('PUB', {
     help: 'Publish to a topic.',
-    action(topic) {
-      if (!topic) {
-        console.error('Usage: .PUB <topic>'.red)
-        this.displayPrompt()
-        return
-      }
+    action: command('Usage: .PUB <topic>', async function (topic) {
+      const args = await question(this, 'Enter args (YAML array)> '.magenta, [])
 
-      this.question('Enter args (YAML array)> '.magenta, (argsInput) => {
-        this.question(
-          'Enter kwargs (YAML object)> '.magenta,
-          async (kwargsInput) => {
-            try {
-              const args = argsInput.trim() ? YAML.parse(argsInput) : []
-              const kwargs = kwargsInput.trim() ? YAML.parse(kwargsInput) : {}
+      const kwargs = await question(
+        this,
+        'Enter kwargs (YAML object)> '.magenta,
+        {},
+      )
 
-              await session.publish(topic.trim(), args, kwargs, {
-                exclude_me: false,
-              })
-              console.info(
-                'Published to',
-                topic.green,
-                inspect({ args, kwargs }, false, 10).yellow,
-              )
-            } catch (error) {
-              console.error(
-                `Error: ${
-                  error instanceof Error ? error.message : String(error)
-                }`.red,
-              )
-            } finally {
-              this.displayPrompt()
-            }
-          },
-        )
+      await session.publish(topic.trim(), args, kwargs, {
+        exclude_me: false,
       })
-    },
+
+      console.info(
+        'Published to',
+        topic.green,
+        inspect({ args, kwargs }, false, 10).yellow,
+      )
+    }),
   })
 
   replServer.defineCommand('REG', {
     help: 'Register a RPC endpoint.',
-    async action(procedure) {
-      if (!procedure) {
-        console.error('Usage: . <procedure>'.red)
-        this.displayPrompt()
-        return
-      }
-
-      try {
-        await session.register(procedure.trim(), (args, kwargs) => {
-          process.stdout.write('\r')
-          console.info(
-            'CALL>'.cyan,
-            `${procedure}>`.yellow,
-            inspect({ args, kwargs }, false, 10),
-          )
-          this.displayPrompt()
-        })
-        console.info('Register a', procedure.green, 'endpoint')
-      } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`
-            .red,
+    action: command('Usage: .REG <procedure>', async function (procedure) {
+      await session.register(procedure.trim(), (args, kwargs) => {
+        process.stdout.write('\r')
+        console.info(
+          'CALL>'.cyan,
+          `${procedure}>`.yellow,
+          inspect({ args, kwargs }, false, 10),
         )
-      } finally {
         this.displayPrompt()
-      }
-    },
+      })
+      console.info('Register a', procedure.green, 'endpoint')
+    }),
   })
 
   replServer.defineCommand('CALL', {
     help: 'Call a RPC endpoint',
-    async action(procedure) {
-      if (!procedure) {
-        console.error('Usage: .CALL <procedure>'.red)
-        this.displayPrompt()
-        return
-      }
+    action: command('Usage: .CALL <procedure>', async function (procedure) {
+      const args = await question(this, 'Enter args (YAML array)> '.magenta, [])
 
-      this.question('Enter args (YAML array)> '.magenta, (argsInput) => {
-        this.question(
-          'Enter kwargs (YAML object)> '.magenta,
-          async (kwargsInput) => {
-            try {
-              const args = argsInput.trim() ? YAML.parse(argsInput) : []
-              const kwargs = kwargsInput.trim() ? YAML.parse(kwargsInput) : {}
+      const kwargs = await question(
+        this,
+        'Enter kwargs (YAML object)> '.magenta,
+        {},
+      )
 
-              const response = await session.call(
-                procedure.trim(),
-                args,
-                kwargs,
-              )
+      const response = await session.call(procedure, args, kwargs)
 
-              console.info(
-                'Called',
-                procedure.green,
-                inspect({ args, kwargs }, false, 10).yellow,
-              )
+      console.info(
+        'Called',
+        procedure.green,
+        inspect({ args, kwargs }, false, 10).yellow,
+      )
 
-              console.info('RES>'.cyan, response)
-            } catch (error) {
-              console.error(
-                `Error: ${
-                  error instanceof Error ? error.message : String(error)
-                }`.red,
-              )
-            } finally {
-              this.displayPrompt()
-            }
-          },
-        )
-      })
-    },
+      console.info('RES>'.cyan, response)
+    }),
   })
 
   replServer.on('reset', reset)
@@ -183,4 +114,42 @@ export const start = (connection: Connection) => (session: Session) => {
     Object.assign(replServer.context, { connection, session })
     replServer.once('exit', () => connection.close())
   }
+}
+
+function command(
+  usage: string,
+  cmd: (this: repl.REPLServer, input: string) => Promise<void>,
+) {
+  return async function (this: repl.REPLServer, input: string) {
+    const $input = input.trim()
+
+    if (!$input) {
+      console.error(usage.red)
+      this.displayPrompt()
+      return
+    }
+
+    try {
+      await cmd.call(this, $input)
+    } catch (error) {
+      console.error(
+        `Error: ${error instanceof Error ? error.message : String(error)}`.red,
+      )
+    } finally {
+      this.displayPrompt()
+    }
+  }
+}
+
+function question<T>(
+  replServer: repl.REPLServer,
+  question: string,
+  dflt: T,
+): Promise<string> {
+  return new Promise<string>((resolve) => {
+    replServer.question(question, (answer) => {
+      const trimmedAnswer = answer.trim()
+      resolve(trimmedAnswer ? YAML.parse(trimmedAnswer) : dflt)
+    })
+  })
 }

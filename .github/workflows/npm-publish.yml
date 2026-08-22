@@ -5,18 +5,40 @@ on:
     branches: [master]
 
 jobs:
+  publish-test:
+    uses: ./.github/workflows/test.yml
+
   publish-npm:
+    needs: publish-test
+    environment: npm
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      id-token: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/create-github-app-token@v3
+        id: auth
         with:
-          token: ${{ secrets.PUSH_TOKEN }}
-      - uses: actions/setup-node@v6
+          client-id: ${{ secrets.APP_CLIENT_ID }}
+          private-key: ${{ secrets.APP_PEM }}
+          permission-contents: write
+          permission-issues: write
+          permission-pull-requests: write
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
+          registry-url: https://registry.npmjs.org
       - run: npm ci
       - run: npm run build
-      - uses: cycjimmy/semantic-release-action@v5
+      - uses: cycjimmy/semantic-release-action@v6
+        with:
+          semantic_version: ^25.0.5
+          extra_plugins: '@semantic-release/git'
         env:
-          GITHUB_TOKEN: ${{ secrets.PUSH_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.auth.outputs.token }}
+          NPM_CONFIG_PROVENANCE: true

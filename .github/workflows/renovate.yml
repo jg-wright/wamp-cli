@@ -9,8 +9,11 @@ jobs:
     name: Auto Approve
     runs-on: ubuntu-latest
     if: github.actor == 'renovate[bot]'
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: hmarr/auto-approve-action@v4
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
