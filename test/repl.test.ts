@@ -1,4 +1,5 @@
 import { test } from 'node:test'
+import { setTimeout } from 'node:timers/promises'
 import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
 import { once } from 'node:events'
@@ -141,18 +142,10 @@ async function startReplSession() {
 
         child.stdin.write('.exit\n')
 
-        const closed = Promise.race([
-          once(child, 'exit'),
-          new Promise<never>((_, reject) => {
-            setTimeout(
-              () => reject(new Error('child did not exit in time')),
-              2_000,
-            )
-          }),
-        ])
-
         try {
-          await closed
+          await once(child, 'exit', {
+            signal: AbortSignal.timeout(2_000),
+          })
         } catch {
           child.kill('SIGKILL')
           await once(child, 'exit')
@@ -178,7 +171,7 @@ async function waitForOutput(
       return
     }
 
-    await new Promise<void>((resolve) => setTimeout(resolve, 25))
+    await setTimeout(25)
   }
 
   throw new Error(
