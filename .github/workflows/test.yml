@@ -10,13 +10,12 @@ jobs:
     services:
       nexusd:
         image: ghcr.io/gammazero/nexusd:latest
-        ports:
-          - 8080:8080
+        ports: [8080:8080]
         command: -realm test1 -ws 0.0.0.0:8080
 
     strategy:
       matrix:
-        node-version: [22, 24, 26]
+        node-version: [24, 26]
 
     steps:
       - uses: actions/checkout@v7
