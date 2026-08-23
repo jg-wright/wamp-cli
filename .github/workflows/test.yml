@@ -10,8 +10,7 @@ jobs:
     services:
       nexusd:
         image: ghcr.io/gammazero/nexusd:latest
-        ports:
-          - 8080:8080
+        ports: [8080:8080]
         command: -realm test1 -ws 0.0.0.0:8080
 
     strategy:
@@ -24,5 +23,5 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
       - run: npm ci
-      - run: npm run build
+      - run: npm run check
       - run: npm test
