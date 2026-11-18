@@ -17,7 +17,8 @@
     "build": "tsc",
     "check": "tsc --noEmit",
     "clean": "rimraf src/*.{js,d.ts}",
-    "test": "node --test test/**/*.test.ts",
+    "test": "docker compose up --detach --wait && npm run test:run; code=$?; docker compose down; exit $code",
+    "test:run": "node --test test/**/*.test.ts",
     "prepare": "husky"
   },
   "dependencies": {
