@@ -1,4 +1,4 @@
-import { test } from 'node:test'
+import { afterEach, beforeEach, test } from 'node:test'
 import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
 import { once } from 'node:events'
@@ -7,14 +7,22 @@ import { fileURLToPath } from 'node:url'
 const DEFAULT_ROUTER_URL = 'ws://0.0.0.0:8080/'
 const DEFAULT_REALM = 'test1'
 
+let replSession: ReplSession
+
+beforeEach(() => {
+  replSession = startReplSession()
+})
+
+afterEach(async () => {
+  await replSession.close()
+})
+
 test('REPL connects to the live router', { timeout: 30_000 }, async () => {
-  await using replSession = await startReplSession()
   await waitForOutput(replSession.readOutput, /Connected/, 10_000)
   assert.match(replSession.readOutput(), /Connected/)
 })
 
 test('REPL subscribes to a topic', { timeout: 30_000 }, async () => {
-  await using replSession = await startReplSession()
   const topic = uniqueTopic()
 
   await waitForOutput(replSession.readOutput, /Connected/, 10_000)
@@ -32,7 +40,6 @@ test('REPL subscribes to a topic', { timeout: 30_000 }, async () => {
 })
 
 test('REPL publishes to a topic', { timeout: 30_000 }, async () => {
-  await using replSession = await startReplSession()
   const topic = uniqueTopic()
 
   await waitForOutput(replSession.readOutput, /Connected/, 10_000)
@@ -65,7 +72,6 @@ test(
   'REPL receives event on subscribed topic',
   { timeout: 30_000 },
   async () => {
-    await using replSession = await startReplSession()
     const topic = uniqueTopic()
 
     await waitForOutput(replSession.readOutput, /Connected/, 10_000)
@@ -102,7 +108,9 @@ test(
   },
 )
 
-async function startReplSession() {
+type ReplSession = ReturnType<typeof startReplSession>
+
+function startReplSession() {
   const routerUrl = process.env.WAMP_ROUTER_URL ?? DEFAULT_ROUTER_URL
   const realm = process.env.WAMP_REALM ?? DEFAULT_REALM
   const entrypointPath = fileURLToPath(
@@ -133,30 +141,28 @@ async function startReplSession() {
     readOutput() {
       return stripAnsi(output)
     },
-    async [Symbol.asyncDispose]() {
-      {
-        if (child.killed || child.exitCode !== null) {
-          return
-        }
+    async close() {
+      if (child.killed || child.exitCode !== null) {
+        return
+      }
 
-        child.stdin.write('.exit\n')
+      child.stdin.write('.exit\n')
 
-        const closed = Promise.race([
-          once(child, 'exit'),
-          new Promise<never>((_, reject) => {
-            setTimeout(
-              () => reject(new Error('child did not exit in time')),
-              2_000,
-            )
-          }),
-        ])
+      const closed = Promise.race([
+        once(child, 'exit'),
+        new Promise<never>((_, reject) => {
+          setTimeout(
+            () => reject(new Error('child did not exit in time')),
+            2_000,
+          )
+        }),
+      ])
 
-        try {
-          await closed
-        } catch {
-          child.kill('SIGKILL')
-          await once(child, 'exit')
-        }
+      try {
+        await closed
+      } catch {
+        child.kill('SIGKILL')
+        await once(child, 'exit')
       }
     },
   }
